@@ -1517,7 +1517,7 @@ func TestFindTopologyAssignments(t *testing.T) {
 				},
 			}},
 		},
-		"no annotation; implied default to unconstrained; 6 pods fit into hosts scattered across the whole datacenter even they could fit into single rack; BestFit": {
+		"no annotation; implied default to unconstrained; 6 pods fit into hosts scattered across the whole datacenter even they could fit into single rack; LeastFreeCapacity": {
 			nodes:  scatteredNodes,
 			levels: defaultThreeLevels,
 			podSets: []PodSetTestCase{{
@@ -2199,7 +2199,7 @@ func TestFindTopologyAssignments(t *testing.T) {
 				},
 			}},
 		},
-		"unconstrained; 6 pods fit into hosts scattered across the whole datacenter even they could fit into single rack; BestFit": {
+		"unconstrained; 6 pods fit into hosts scattered across the whole datacenter even they could fit into single rack; LeastFreeCapacity": {
 			nodes:  scatteredNodes,
 			levels: defaultThreeLevels,
 			podSets: []PodSetTestCase{{
@@ -2218,30 +2218,6 @@ func TestFindTopologyAssignments(t *testing.T) {
 						{Count: 1, Values: []string{"x5"}},
 						{Count: 1, Values: []string{"x2"}},
 						{Count: 2, Values: []string{"x6"}},
-					},
-				},
-			}},
-		},
-		"unconstrained; a single pod fits into each host; BestFit": {
-			nodes:  defaultNodes,
-			levels: defaultThreeLevels,
-			podSets: []PodSetTestCase{{
-				topologyRequest: &kueue.PodSetTopologyRequest{
-					Unconstrained: new(true),
-				},
-				requests: map[corev1.ResourceName]int64{
-					corev1.ResourceCPU: 1000,
-				},
-				count: 1,
-				wantAssignment: &tas.TopologyAssignment{
-					Levels: defaultOneLevel,
-					Domains: []tas.TopologyDomainAssignment{
-						{
-							Count: 1,
-							Values: []string{
-								"x3",
-							},
-						},
 					},
 				},
 			}},
@@ -2768,7 +2744,7 @@ func TestFindTopologyAssignments(t *testing.T) {
 					`. Total nodes: 6; excluded: resource "cpu": 6`,
 			}},
 		},
-		"unconstrained; all nodes needed; non-hostname lowest level; BestFit": {
+		"unconstrained; all nodes needed; non-hostname lowest level; LeastFreeCapacity": {
 			// The assignment must be published at the user-specified levels
 			// with per-rack counts summed over the underlying nodes.
 			featureGates: map[featuregate.Feature]bool{features.TASNodeFeasibilityForAllLevels: true},

@@ -31,6 +31,7 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/util/validation/field"
+	utilfeature "k8s.io/apiserver/pkg/util/feature"
 	clientgoscheme "k8s.io/client-go/kubernetes/scheme"
 	clientcmdapi "k8s.io/client-go/tools/clientcmd/api"
 	"k8s.io/component-base/featuregate"
@@ -2718,6 +2719,26 @@ func TestValidate(t *testing.T) {
 }
 
 func TestLoadAndValidateFeatureGates(t *testing.T) {
+	tasDisabledGateMap := map[string]bool{
+		string(features.TopologyAwareScheduling): false,
+	}
+	fgDependencies := utilfeature.DefaultMutableFeatureGate.Dependencies()
+	for changed := true; changed; {
+		changed = false
+		for fg, deps := range fgDependencies {
+			if _, ok := tasDisabledGateMap[string(fg)]; ok {
+				continue
+			}
+			for _, dep := range deps {
+				if _, depDisabled := tasDisabledGateMap[string(dep)]; depDisabled {
+					tasDisabledGateMap[string(fg)] = false
+					changed = true
+					break
+				}
+			}
+		}
+	}
+
 	cases := map[string]struct {
 		featureGatesCLI string
 		featureGateMap  map[string]bool
@@ -2809,6 +2830,9 @@ func TestLoadAndValidateFeatureGates(t *testing.T) {
 					Detail: "feature gates for CLI and configuration cannot both specified",
 				},
 			},
+		},
+		"disabling TAS with all dependent gates disabled succeeds": {
+			featureGateMap: tasDisabledGateMap,
 		},
 		"cannot set TAS profile with TAS disabled": {
 			featureGateMap: map[string]bool{
